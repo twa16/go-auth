@@ -30,7 +30,7 @@ type AuthProvider struct {
 	SessionExpireTimeSeconds int64
 }
 
-type AuthUser struct {
+type User struct {
 	gorm.Model
 	Username string
 	PasswordHash []byte
@@ -39,25 +39,25 @@ type AuthUser struct {
 	Email string
 	PhoneNumber string
 	Role string
-	Permissions []AuthPermission
-	UserMetaData []AuthUserMetadata
-	Sessions     []AuthSession
+	Permissions []Permission
+	UserMetaData []UserMetadata
+	Sessions     []Session
 }
 
-type AuthPermission struct {
+type Permission struct {
 	gorm.Model
 	AuthUserID uint
 	Permission string
 }
 
-type AuthUserMetadata struct {
+type UserMetadata struct {
 	gorm.Model
 	AuthUserID uint
 	Key string
 	Value string
 }
 
-type AuthSession struct {
+type Session struct {
 	gorm.Model
 	AuthenticationToken string //Session key used to authorize requests
 	AuthUserID              uint   //ID of user that this token belongs to
@@ -65,18 +65,25 @@ type AuthSession struct {
 	Persistent	    bool   //If this is set to true, the key never expires.
 }
 
-type AuthSessionCheckResponse struct {
-	AuthSession *AuthSession
+type SessionCheckResponse struct {
+	AuthSession *Session
 	IsExpired bool
 }
 
-func (authProvider AuthProvider) CreateUser(user AuthUser) (AuthUser, error) {
+func (authProvider AuthProvider) Startup() {
+	authProvider.Database.AutoMigrate(&User{})
+	authProvider.Database.AutoMigrate(&Permission{})
+	authProvider.Database.AutoMigrate(&UserMetadata{})
+	authProvider.Database.AutoMigrate(&Session{})
+}
+
+func (authProvider AuthProvider) CreateUser(user User) (User, error) {
 	err := authProvider.Database.Create(&user).Error
 	return user, err
 }
 
-func (authProvider AuthProvider) GetUser(username string) (AuthUser, error) {
-	var user AuthUser
+func (authProvider AuthProvider) GetUser(username string) (User, error) {
+	var user User
 	err := authProvider.Database.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return user, err
@@ -85,8 +92,8 @@ func (authProvider AuthProvider) GetUser(username string) (AuthUser, error) {
 	return user, err
 }
 
-func (authProvider AuthProvider) GetUserByID(userID uint) (AuthUser, error) {
-	var user AuthUser
+func (authProvider AuthProvider) GetUserByID(userID uint) (User, error) {
+	var user User
 	err := authProvider.Database.First(&user, userID).Error
 	authProvider.Database.Model(&user).Related(&user.UserMetaData)
 	authProvider.Database.Model(&user).Related(&user.Permissions)
@@ -109,9 +116,9 @@ func (authProvider AuthProvider) CheckLogin(username string, password string) (b
 	return compareResultError == nil, nil
 }
 
-//GenerateSessionKey Generates a AuthSession for a user. If 'persistent' is set to true the session will never expire.
-func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool) (AuthSession, error) {
-	sessionKey := AuthSession{}
+//GenerateSessionKey Generates a Session for a user. If 'persistent' is set to true the session will never expire.
+func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool) (Session, error) {
+	sessionKey := Session{}
 	sessionKey.AuthUserID = userID
 	sessionKey.Persistent = persistent
 	sessionKey.AuthenticationToken = uuid.NewV4().String()
@@ -120,18 +127,18 @@ func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool
 }
 
 //CheckSessionKey Checks a session key and returns the session if it exists
-func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (AuthSessionCheckResponse, error) {
-	var session AuthSession
+func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionCheckResponse, error) {
+	var session Session
 	err := authProvider.Database.Where("authentication_token = ?", sessionKey).First(&session).Error
 
 	curTime := time.Now().Unix()
-	checkResponse := AuthSessionCheckResponse{}
+	checkResponse := SessionCheckResponse{}
 	checkResponse.AuthSession = &session
 	checkResponse.IsExpired = (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds
 	return checkResponse, err
 }
 
-func (authProvider AuthProvider) UpdateSessionAccessTime(session AuthSession) {
+func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) {
 	curTime := time.Now().Unix()
 	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
 		session.LastSeen = curTime
@@ -141,7 +148,7 @@ func (authProvider AuthProvider) UpdateSessionAccessTime(session AuthSession) {
 
 //CheckPermission Returns true if the user has the provided permission
 func (authProvider AuthProvider) CheckPermission(userID uint, permission string) (bool, error) {
-	var user AuthUser
+	var user User
 	//Get the user object from the authProvider.Database
 	err := authProvider.Database.Find(&user, userID).Error
 	if err != nil {
@@ -152,7 +159,7 @@ func (authProvider AuthProvider) CheckPermission(userID uint, permission string)
 }
 
 //CheckPermissionLogic method that contains logic used to process permission checks
-func (authProvider AuthProvider) CheckPermissionLogic(permissionReq string, userPermissions []AuthPermission) bool {
+func (authProvider AuthProvider) CheckPermissionLogic(permissionReq string, userPermissions []Permission) bool {
 	//Split Permission Request
 	permReqParts := strings.Split(permissionReq, ".")
 	for _, userPerm := range userPermissions {

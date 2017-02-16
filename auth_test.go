@@ -27,8 +27,8 @@ func init() {
 }
 
 func TestPermissionLogicSimpleEquality(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "a.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -39,8 +39,8 @@ func TestPermissionLogicSimpleEquality(t *testing.T) {
 }
 
 func TestPermissionLogicLevelOneWildcard(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "*"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -52,8 +52,8 @@ func TestPermissionLogicLevelOneWildcard(t *testing.T) {
 
 
 func TestPermissionLogicLevelTwoWildcard(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "a.*"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -64,8 +64,8 @@ func TestPermissionLogicLevelTwoWildcard(t *testing.T) {
 }
 
 func TestPermissionLogicLevelThreeWildcard(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "a.b.*"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -76,8 +76,8 @@ func TestPermissionLogicLevelThreeWildcard(t *testing.T) {
 }
 
 func TestPermissionLogicTooShort(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "a.b"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -88,8 +88,8 @@ func TestPermissionLogicTooShort(t *testing.T) {
 }
 
 func TestPermissionLogicSimpleMismatch(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "b.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
@@ -100,8 +100,8 @@ func TestPermissionLogicSimpleMismatch(t *testing.T) {
 }
 
 func TestPermissionLogicSimpleMultirule(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "b.b.c"
 	userPermissions = append(userPermissions, userPermission)
 	userPermission.Permission = "a.b.c"
@@ -114,8 +114,8 @@ func TestPermissionLogicSimpleMultirule(t *testing.T) {
 }
 
 func TestPermissionLogicSimpleMultiruleMatchFirst(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "a.b.c"
 	userPermissions = append(userPermissions, userPermission)
 	userPermission.Permission = "e.b.c"
@@ -128,8 +128,8 @@ func TestPermissionLogicSimpleMultiruleMatchFirst(t *testing.T) {
 }
 
 func TestPermissionLogicWildcardMultirule(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "b.b.c"
 	userPermissions = append(userPermissions, userPermission)
 	userPermission.Permission = "a.*"
@@ -142,8 +142,8 @@ func TestPermissionLogicWildcardMultirule(t *testing.T) {
 }
 
 func TestPermissionLogicSimpleMultiruleNoMatch(t *testing.T) {
-	var userPermissions []AuthPermission
-	userPermission := AuthPermission{}
+	var userPermissions []Permission
+	userPermission := Permission{}
 	userPermission.Permission = "f.b.c"
 	userPermissions = append(userPermissions, userPermission)
 	userPermission.Permission = "d.b.c"
