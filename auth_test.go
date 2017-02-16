@@ -21,13 +21,18 @@ import (
 	"testing"
 )
 
+var authProvider AuthProvider
+func init() {
+	authProvider = AuthProvider{}
+}
+
 func TestPermissionLogicSimpleEquality(t *testing.T) {
 	var userPermissions []AuthPermission
 	userPermission := AuthPermission{}
 	userPermission.Permission = "a.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -39,7 +44,7 @@ func TestPermissionLogicLevelOneWildcard(t *testing.T) {
 	userPermission.Permission = "*"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -52,7 +57,7 @@ func TestPermissionLogicLevelTwoWildcard(t *testing.T) {
 	userPermission.Permission = "a.*"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -64,7 +69,7 @@ func TestPermissionLogicLevelThreeWildcard(t *testing.T) {
 	userPermission.Permission = "a.b.*"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -76,7 +81,7 @@ func TestPermissionLogicTooShort(t *testing.T) {
 	userPermission.Permission = "a.b"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == true {
 		t.Fail()
 	}
@@ -88,7 +93,7 @@ func TestPermissionLogicSimpleMismatch(t *testing.T) {
 	userPermission.Permission = "b.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == true {
 		t.Fail()
 	}
@@ -102,7 +107,7 @@ func TestPermissionLogicSimpleMultirule(t *testing.T) {
 	userPermission.Permission = "a.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -116,7 +121,7 @@ func TestPermissionLogicSimpleMultiruleMatchFirst(t *testing.T) {
 	userPermission.Permission = "e.b.c"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -130,7 +135,7 @@ func TestPermissionLogicWildcardMultirule(t *testing.T) {
 	userPermission.Permission = "a.*"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == false {
 		t.Fail()
 	}
@@ -146,7 +151,7 @@ func TestPermissionLogicSimpleMultiruleNoMatch(t *testing.T) {
 	userPermission.Permission = "d.e.c"
 	userPermissions = append(userPermissions, userPermission)
 
-	res := CheckPermissionLogic("a.b.c", userPermissions)
+	res := authProvider.CheckPermissionLogic("a.b.c", userPermissions)
 	if res == true {
 		t.Fail()
 	}

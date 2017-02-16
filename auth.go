@@ -22,7 +22,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"github.com/satori/go.uuid"
 	"strings"
+	"time"
 )
+
+type AuthProvider struct {
+	Database *gorm.DB
+	SessionExpireTimeSeconds int64
+}
 
 type AuthUser struct {
 	gorm.Model
@@ -59,33 +65,38 @@ type AuthSession struct {
 	Persistent	    bool   //If this is set to true, the key never expires.
 }
 
-func CreateUser(db *gorm.DB, user AuthUser) (AuthUser, error) {
-	err := db.Create(&user).Error
+type AuthSessionCheckResponse struct {
+	AuthSession *AuthSession
+	IsExpired bool
+}
+
+func (authProvider AuthProvider) CreateUser(user AuthUser) (AuthUser, error) {
+	err := authProvider.Database.Create(&user).Error
 	return user, err
 }
 
-func GetUser(db *gorm.DB, username string) (AuthUser, error) {
+func (authProvider AuthProvider) GetUser(username string) (AuthUser, error) {
 	var user AuthUser
-	err := db.Where("username = ?", username).First(&user).Error
+	err := authProvider.Database.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return user, err
 	}
-	user, err = GetUserByID(db, user.ID)
+	user, err = authProvider.GetUserByID(user.ID)
 	return user, err
 }
 
-func GetUserByID(db *gorm.DB, userID uint) (AuthUser, error) {
+func (authProvider AuthProvider) GetUserByID(userID uint) (AuthUser, error) {
 	var user AuthUser
-	err := db.First(&user, userID).Error
-	db.Model(&user).Related(&user.UserMetaData)
-	db.Model(&user).Related(&user.Permissions)
-	db.Model(&user).Related(&user.Sessions)
+	err := authProvider.Database.First(&user, userID).Error
+	authProvider.Database.Model(&user).Related(&user.UserMetaData)
+	authProvider.Database.Model(&user).Related(&user.Permissions)
+	authProvider.Database.Model(&user).Related(&user.Sessions)
 	return user, err
 }
 
 //CheckLogin This function returns the user true if the credentials correspond to a user
-func CheckLogin(db *gorm.DB, username string, password string) (bool, error) {
-	userObject, err := GetUser(db, username)
+func (authProvider AuthProvider) CheckLogin(username string, password string) (bool, error) {
+	userObject, err := authProvider.GetUser(username)
 	//Check if there is an error
 	if err != nil {
 		return false, err
@@ -99,28 +110,49 @@ func CheckLogin(db *gorm.DB, username string, password string) (bool, error) {
 }
 
 //GenerateSessionKey Generates a AuthSession for a user. If 'persistent' is set to true the session will never expire.
-func GenerateSessionKey(db *gorm.DB, userID uint, persistent bool) (AuthSession, error) {
+func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool) (AuthSession, error) {
 	sessionKey := AuthSession{}
 	sessionKey.AuthUserID = userID
 	sessionKey.Persistent = persistent
 	sessionKey.AuthenticationToken = uuid.NewV4().String()
-	err := db.Create(sessionKey).Error
+	err := authProvider.Database.Create(&sessionKey).Error
 	return sessionKey, err
 }
 
+//CheckSessionKey Checks a session key and returns the session if it exists
+func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (AuthSessionCheckResponse, error) {
+	var session AuthSession
+	err := authProvider.Database.Where("authentication_token = ?", sessionKey).First(&session).Error
+
+	curTime := time.Now().Unix()
+	checkResponse := AuthSessionCheckResponse{}
+	checkResponse.AuthSession = &session
+	checkResponse.IsExpired = (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds
+	return checkResponse, err
+}
+
+func (authProvider AuthProvider) UpdateSessionAccessTime(session AuthSession) {
+	curTime := time.Now().Unix()
+	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
+		session.LastSeen = curTime
+		authProvider.Database.Save(&session)
+	}
+}
+
 //CheckPermission Returns true if the user has the provided permission
-func CheckPermission(db *gorm.DB, userID uint, permission string) (bool, error) {
+func (authProvider AuthProvider) CheckPermission(userID uint, permission string) (bool, error) {
 	var user AuthUser
-	//Get the user object from the db
-	err := db.Find(&user, userID).Error
+	//Get the user object from the authProvider.Database
+	err := authProvider.Database.Find(&user, userID).Error
 	if err != nil {
 		return false, err
 	}
-	return CheckPermissionLogic(permission, user.Permissions), err
+	return authProvider.CheckPermissionLogic(permission, user.Permissions), err
 
 }
 
-func CheckPermissionLogic(permissionReq string, userPermissions []AuthPermission) bool {
+//CheckPermissionLogic method that contains logic used to process permission checks
+func (authProvider AuthProvider) CheckPermissionLogic(permissionReq string, userPermissions []AuthPermission) bool {
 	//Split Permission Request
 	permReqParts := strings.Split(permissionReq, ".")
 	for _, userPerm := range userPermissions {
