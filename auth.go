@@ -39,9 +39,9 @@ type User struct {
 	Email string
 	PhoneNumber string
 	Role string
-	Permissions []Permission
-	UserMetaData []UserMetadata
-	Sessions     []Session
+	Permissions []Permission `gorm:"ForeignKey:AuthUserID"`
+	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"`
+	Sessions     []Session `gorm:"ForeignKey:AuthUserID"`
 }
 
 type Permission struct {
@@ -78,7 +78,7 @@ func (authProvider AuthProvider) Startup() {
 }
 
 func (authProvider AuthProvider) CreateUser(user User) (User, error) {
-	err := authProvider.Database.Create(&user).Error
+	err := authProvider.Database.Save(&user).Error
 	return user, err
 }
 
@@ -95,9 +95,6 @@ func (authProvider AuthProvider) GetUser(username string) (User, error) {
 func (authProvider AuthProvider) GetUserByID(userID uint) (User, error) {
 	var user User
 	err := authProvider.Database.First(&user, userID).Error
-	authProvider.Database.Model(&user).Related(&user.UserMetaData)
-	authProvider.Database.Model(&user).Related(&user.Permissions)
-	authProvider.Database.Model(&user).Related(&user.Sessions)
 	return user, err
 }
 

@@ -19,11 +19,23 @@ package simpleauth
 
 import (
 	"testing"
+	"github.com/jinzhu/gorm"
+	"fmt"
+	"os"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 var authProvider AuthProvider
 func init() {
 	authProvider = AuthProvider{}
+	os.Remove("./userspace.db")
+	db, err := gorm.Open("sqlite3", "./auth-test.db")
+	if err != nil {
+		fmt.Println("Error starting DB: "+err.Error())
+		os.Exit(1)
+	}
+	authProvider.Database = db
+	authProvider.Startup()
 }
 
 func TestPermissionLogicSimpleEquality(t *testing.T) {
@@ -156,4 +168,34 @@ func TestPermissionLogicSimpleMultiruleNoMatch(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestUserCreationSimple(t *testing.T) {
+	var userToCreate User
+	userToCreate.Username = "testuser"
+	userToCreate.FirstName = "Test"
+	userToCreate.LastName = "User"
+	userToCreate.Email = "test@testcompany.com"
+	userToCreate.PhoneNumber = "1234567890"
+	userToCreate.Permissions = []Permission{Permission{Permission: "test.pass"}}
+
+	_, err := authProvider.CreateUser(userToCreate)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func TestGetUser(t *testing.T) {
+	user, err := authProvider.GetUser("testuser")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if user.Email != "test@testcompany.com" {
+		t.Fail()
+	}
+	if len(user.Permissions) == 0 {
+		t.Error("Permissions association broken")
+	}
+}
+
+
 
