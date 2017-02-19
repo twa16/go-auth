@@ -12,26 +12,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
-
+ */
 
 package simpleauth
 
 import (
-	"testing"
-	"github.com/jinzhu/gorm"
 	"fmt"
-	"os"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"os"
+	"testing"
 )
 
 var authProvider AuthProvider
+
 func init() {
 	authProvider = AuthProvider{}
 	os.Remove("./userspace.db")
 	db, err := gorm.Open("sqlite3", "./auth-test.db")
 	if err != nil {
-		fmt.Println("Error starting DB: "+err.Error())
+		fmt.Println("Error starting DB: " + err.Error())
 		os.Exit(1)
 	}
 	authProvider.Database = db
@@ -61,7 +61,6 @@ func TestPermissionLogicLevelOneWildcard(t *testing.T) {
 		t.Fail()
 	}
 }
-
 
 func TestPermissionLogicLevelTwoWildcard(t *testing.T) {
 	var userPermissions []Permission
@@ -196,6 +195,3 @@ func TestGetUser(t *testing.T) {
 		t.Error("Permissions association broken")
 	}
 }
-
-
-

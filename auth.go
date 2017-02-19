@@ -12,64 +12,64 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
-
+ */
 
 package simpleauth
 
 import (
 	"github.com/jinzhu/gorm"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 	"strings"
 	"time"
 )
 
 type AuthProvider struct {
-	Database *gorm.DB
-	SessionExpireTimeSeconds int64
+	Database                 *gorm.DB //Database that the auth provider uses to store user information
+	SessionExpireTimeSeconds int64 //The time the sessions created by this provider should live
 }
 
 type User struct {
-	gorm.Model
-	Username string
-	PasswordHash []byte
-	FirstName string
-	LastName string
-	Email string
-	PhoneNumber string
-	Role string
-	Permissions []Permission `gorm:"ForeignKey:AuthUserID"`
-	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"`
-	Sessions     []Session `gorm:"ForeignKey:AuthUserID"`
+	gorm.Model //All DB fields
+	Username     string //The username of the user
+	PasswordHash []byte //BCrypt hash of the user's password
+	FirstName    string //First name of the user
+	LastName     string //Last name of the user
+	Email        string //Email of the user
+	PhoneNumber  string //Phone number of the users
+	Role         string //String that represents a user's role
+	Permissions  []Permission   `gorm:"ForeignKey:AuthUserID"` //The permissions the user has
+	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"` //The metadata of the user
+	Sessions     []Session      `gorm:"ForeignKey:AuthUserID"` //Sessions associated with this user
 }
 
 type Permission struct {
-	gorm.Model
-	AuthUserID uint
-	Permission string
+	gorm.Model //DB Fields
+	AuthUserID uint //ID of the user this belongs to
+	Permission string //Permission string
 }
 
 type UserMetadata struct {
-	gorm.Model
-	AuthUserID uint
-	Key string
-	Value string
+	gorm.Model //DB Fields
+	AuthUserID uint //ID of the user this belongs to
+	Key        string //Key for the metadata field
+	Value      string //Value for this metadata field
 }
 
 type Session struct {
-	gorm.Model
+	gorm.Model //DB Fields
 	AuthenticationToken string //Session key used to authorize requests
-	AuthUserID              uint   //ID of user that this token belongs to
+	AuthUserID          uint   //ID of user that this token belongs to
 	LastSeen            int64  //Linux time of last API Call
-	Persistent	    bool   //If this is set to true, the key never expires.
+	Persistent          bool   //If this is set to true, the key never expires.
 }
 
 type SessionCheckResponse struct {
-	AuthSession *Session
-	IsExpired bool
+	AuthSession *Session //Session pointer. Set if the session exists
+	IsExpired   bool //True if the session is expired
 }
 
+//Startup This method migrates all models and does all needed one time setup for the authentication provider
 func (authProvider AuthProvider) Startup() {
 	authProvider.Database.AutoMigrate(&User{})
 	authProvider.Database.AutoMigrate(&Permission{})
@@ -77,11 +77,13 @@ func (authProvider AuthProvider) Startup() {
 	authProvider.Database.AutoMigrate(&Session{})
 }
 
+//CreateUser Persists the user in the database
 func (authProvider AuthProvider) CreateUser(user User) (User, error) {
 	err := authProvider.Database.Save(&user).Error
 	return user, err
 }
 
+//GetUser Retrieves a user from the database by their username
 func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	var user User
 	err := authProvider.Database.Where("username = ?", username).First(&user).Error
@@ -92,6 +94,7 @@ func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	return user, err
 }
 
+//GetUserByID Gets a user from the database by their ID
 func (authProvider AuthProvider) GetUserByID(userID uint) (User, error) {
 	var user User
 	err := authProvider.Database.First(&user, userID).Error
@@ -135,6 +138,7 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 	return checkResponse, err
 }
 
+//UpdateSessionAccessTime Sets the last access time on a session to the current time.
 func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) {
 	curTime := time.Now().Unix()
 	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
@@ -164,7 +168,7 @@ func (authProvider AuthProvider) CheckPermissionLogic(permissionReq string, user
 		userPermPartCount := len(userPermParts)
 		for ri, permReqPart := range permReqParts {
 			//Check if the requested permission is too long
-			if (ri+1) > userPermPartCount {
+			if (ri + 1) > userPermPartCount {
 				break
 			}
 			//Check if the user permission at this section is a wildcard
@@ -176,7 +180,7 @@ func (authProvider AuthProvider) CheckPermissionLogic(permissionReq string, user
 				break
 			}
 			//If all other tests pass and this is the last piece, this permission works
-			if (ri+1) == len(permReqParts) {
+			if (ri + 1) == len(permReqParts) {
 				return true
 			}
 		}
