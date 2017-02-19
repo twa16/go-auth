@@ -26,38 +26,38 @@ import (
 
 type AuthProvider struct {
 	Database                 *gorm.DB //Database that the auth provider uses to store user information
-	SessionExpireTimeSeconds int64 //The time the sessions created by this provider should live
+	SessionExpireTimeSeconds int64    //The time the sessions created by this provider should live
 }
 
 type User struct {
-	gorm.Model //All DB fields
-	Username     string //The username of the user
-	PasswordHash []byte //BCrypt hash of the user's password
-	FirstName    string //First name of the user
-	LastName     string //Last name of the user
-	Email        string //Email of the user
-	PhoneNumber  string //Phone number of the users
-	Role         string //String that represents a user's role
+	gorm.Model                  //All DB fields
+	Username     string         //The username of the user
+	PasswordHash []byte         //BCrypt hash of the user's password
+	FirstName    string         //First name of the user
+	LastName     string         //Last name of the user
+	Email        string         //Email of the user
+	PhoneNumber  string         //Phone number of the users
+	Role         string         //String that represents a user's role
 	Permissions  []Permission   `gorm:"ForeignKey:AuthUserID"` //The permissions the user has
 	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"` //The metadata of the user
 	Sessions     []Session      `gorm:"ForeignKey:AuthUserID"` //Sessions associated with this user
 }
 
 type Permission struct {
-	gorm.Model //DB Fields
-	AuthUserID uint //ID of the user this belongs to
+	gorm.Model        //DB Fields
+	AuthUserID uint   //ID of the user this belongs to
 	Permission string //Permission string
 }
 
 type UserMetadata struct {
-	gorm.Model //DB Fields
-	AuthUserID uint //ID of the user this belongs to
+	gorm.Model        //DB Fields
+	AuthUserID uint   //ID of the user this belongs to
 	Key        string //Key for the metadata field
 	Value      string //Value for this metadata field
 }
 
 type Session struct {
-	gorm.Model //DB Fields
+	gorm.Model                 //DB Fields
 	AuthenticationToken string //Session key used to authorize requests
 	AuthUserID          uint   //ID of user that this token belongs to
 	LastSeen            int64  //Linux time of last API Call
@@ -66,7 +66,7 @@ type Session struct {
 
 type SessionCheckResponse struct {
 	AuthSession *Session //Session pointer. Set if the session exists
-	IsExpired   bool //True if the session is expired
+	IsExpired   bool     //True if the session is expired
 }
 
 //Startup This method migrates all models and does all needed one time setup for the authentication provider
