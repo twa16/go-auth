@@ -22,6 +22,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"os"
 	"testing"
+	"time"
 )
 
 var authProvider AuthProvider
@@ -233,3 +234,58 @@ func TestLogin(t *testing.T) {
 	}
 }
 
+var scuserID uint
+var scsessionToken string
+func TestSessionCreation(t *testing.T) {
+	user, _ := authProvider.GetUser("testuser")
+	session, err := authProvider.GenerateSessionKey(user.ID, false)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if session.AuthenticationToken == "" {
+		t.Fatal("Failed to generate session token")
+	} else {
+		scuserID = session.AuthUserID
+		scsessionToken = session.AuthenticationToken
+	}
+}
+
+func TestSessionCheck(t *testing.T) {
+	scresp, err := authProvider.CheckSessionKey(scsessionToken)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if scresp.AuthSession == nil {
+		t.Fatal("Session lookup failed")
+	}
+	if scresp.AuthSession.AuthUserID != scuserID {
+		t.Fatal("Session userID mismatch")
+	}
+	if scresp.IsExpired {
+		t.Fatal("Session expired too soon")
+	}
+}
+
+func TestCheckUserPermissionMethod(t *testing.T) {
+	user, _ := authProvider.GetUser("testuser")
+	hasPerm, err := authProvider.CheckPermission(user.ID, "test.pass")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if hasPerm == false {
+		t.Fatal("Permission Check Helper Failed")
+	}
+}
+
+func TestSessionAccessUpdate(t *testing.T) {
+	scresp, err := authProvider.CheckSessionKey(scsessionToken)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	authProvider.UpdateSessionAccessTime(*scresp.AuthSession)
+	scresp, _ = authProvider.CheckSessionKey(scsessionToken)
+	curTime := time.Now().Unix()
+	if curTime - scresp.AuthSession.LastSeen > 5 {
+		t.Fatal("Session access update failed")
+	}
+}

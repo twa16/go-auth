@@ -158,7 +158,7 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 //UpdateSessionAccessTime Sets the last access time on a session to the current time.
 func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) {
 	curTime := time.Now().Unix()
-	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
+	if (curTime - session.LastSeen) > authProvider.SessionExpireTimeSeconds {
 		session.LastSeen = curTime
 		authProvider.Database.Save(&session)
 	}
@@ -166,9 +166,7 @@ func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) {
 
 //CheckPermission Returns true if the user has the provided permission
 func (authProvider AuthProvider) CheckPermission(userID uint, permission string) (bool, error) {
-	var user User
-	//Get the user object from the authProvider.Database
-	err := authProvider.Database.Find(&user, userID).Error
+	user, err := authProvider.GetUserByID(userID)
 	if err != nil {
 		return false, err
 	}
