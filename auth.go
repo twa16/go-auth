@@ -87,6 +87,11 @@ func (authProvider AuthProvider) CreateUser(user User) (User, error) {
 	return user, err
 }
 
+//UpdateUser Update a user's data. This is just a wrapper around CreateUser.
+func (authProvider AuthProvider) UpdateUser(user User) (User, error) {
+	return authProvider.CreateUser(user)
+}
+
 //GetUser Retrieves a user from the database by their username
 func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	var user User
