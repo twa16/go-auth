@@ -27,13 +27,18 @@ import (
 var authProvider AuthProvider
 
 func init() {
+	//os.Remove("./auth-test.db")
 	authProvider = AuthProvider{}
-	os.Remove("./userspace.db")
 	db, err := gorm.Open("sqlite3", "./auth-test.db")
+	db.DropTable(&User{})
+	db.DropTable(&Permission{})
+	db.DropTable(&UserMetadata{})
+	db.DropTable(&Session{})
 	if err != nil {
 		fmt.Println("Error starting DB: " + err.Error())
 		os.Exit(1)
 	}
+	//db.LogMode(true)
 	authProvider.Database = db
 	authProvider.Startup()
 }
@@ -175,9 +180,9 @@ func TestUserCreationSimple(t *testing.T) {
 	userToCreate.LastName = "User"
 	userToCreate.Email = "test@testcompany.com"
 	userToCreate.PhoneNumber = "1234567890"
-	userToCreate.Permissions = []Permission{Permission{Permission: "test.pass"}}
+	userToCreate.Permissions = []Permission{{Permission: "test.pass"}}
 
-	_, err := authProvider.CreateUser(userToCreate)
+	userToCreate, err := authProvider.CreateUser(userToCreate)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -192,6 +197,17 @@ func TestGetUser(t *testing.T) {
 		t.Fail()
 	}
 	if len(user.Permissions) == 0 {
-		t.Error("Permissions association broken")
+		t.Error("Permissions association broken by username")
+	}
+
+	userByID, err := authProvider.GetUserByID(user.ID)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if userByID.Email != "test@testcompany.com" {
+		t.Fail()
+	}
+	if len(userByID.Permissions) == 0 {
+		t.Error("Permissions association broken by id")
 	}
 }

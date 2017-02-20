@@ -22,6 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 	"time"
+	"fmt"
 )
 
 type AuthProvider struct {
@@ -80,6 +81,9 @@ func (authProvider AuthProvider) Startup() {
 //CreateUser Persists the user in the database
 func (authProvider AuthProvider) CreateUser(user User) (User, error) {
 	err := authProvider.Database.Save(&user).Error
+	if err != nil {
+		fmt.Println(err)
+	}
 	return user, err
 }
 
@@ -87,10 +91,9 @@ func (authProvider AuthProvider) CreateUser(user User) (User, error) {
 func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	var user User
 	err := authProvider.Database.Where("username = ?", username).First(&user).Error
-	if err != nil {
-		return user, err
-	}
-	user, err = authProvider.GetUserByID(user.ID)
+	authProvider.Database.Model(&user).Association("Permissions").Find(&user.Permissions)
+	authProvider.Database.Model(&user).Association("UserMetaData").Find(&user.UserMetaData)
+	authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
 	return user, err
 }
 
@@ -98,6 +101,9 @@ func (authProvider AuthProvider) GetUser(username string) (User, error) {
 func (authProvider AuthProvider) GetUserByID(userID uint) (User, error) {
 	var user User
 	err := authProvider.Database.First(&user, userID).Error
+	authProvider.Database.Model(&user).Association("Permissions").Find(&user.Permissions)
+	authProvider.Database.Model(&user).Association("UserMetaData").Find(&user.UserMetaData)
+	authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
 	return user, err
 }
 
