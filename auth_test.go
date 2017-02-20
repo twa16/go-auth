@@ -289,3 +289,13 @@ func TestSessionAccessUpdate(t *testing.T) {
 		t.Fatal("Session access update failed")
 	}
 }
+
+func TestUserLookupGracefulFail(t *testing.T) {
+	user, err := authProvider.GetUser("thisuserdoesnotexist")
+	if err == nil {
+		t.Fatal(err.Error())
+	}
+	if user.Username != "" {
+		t.Fatal(err.Error())
+	}
+}

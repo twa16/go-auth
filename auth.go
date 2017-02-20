@@ -96,6 +96,9 @@ func (authProvider AuthProvider) UpdateUser(user User) (User, error) {
 func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	var user User
 	err := authProvider.Database.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return user, err
+	}
 	authProvider.Database.Model(&user).Association("Permissions").Find(&user.Permissions)
 	authProvider.Database.Model(&user).Association("UserMetaData").Find(&user.UserMetaData)
 	authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
