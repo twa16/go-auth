@@ -107,6 +107,17 @@ func (authProvider AuthProvider) GetUserByID(userID uint) (User, error) {
 	return user, err
 }
 
+//SetUserPassword Sets the user's password
+func (authProvider AuthProvider) SetUserPassword(user User, password string) error {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = passwordHash
+	authProvider.Database.Save(user)
+	return nil
+}
+
 //CheckLogin This function returns the user true if the credentials correspond to a user
 func (authProvider AuthProvider) CheckLogin(username string, password string) (bool, error) {
 	userObject, err := authProvider.GetUser(username)

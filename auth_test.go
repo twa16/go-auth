@@ -211,3 +211,25 @@ func TestGetUser(t *testing.T) {
 		t.Error("Permissions association broken by id")
 	}
 }
+
+func TestSetPassword(t *testing.T) {
+	user, err := authProvider.GetUser("testuser")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	err = authProvider.SetUserPassword(user, "testtest")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func TestLogin(t *testing.T) {
+	goodLogin, err := authProvider.CheckLogin("testuser", "testtest")
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if goodLogin == false {
+		t.Fatal("Password Check Error")
+	}
+}
+
