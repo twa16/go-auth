@@ -147,6 +147,7 @@ func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool
 	sessionKey.AuthUserID = userID
 	sessionKey.Persistent = persistent
 	sessionKey.AuthenticationToken = uuid.NewV4().String()
+	sessionKey.LastSeen = time.Now().Unix()
 	err := authProvider.Database.Create(&sessionKey).Error
 	return sessionKey, err
 }
