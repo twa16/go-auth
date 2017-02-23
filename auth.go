@@ -160,7 +160,7 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 	curTime := time.Now().Unix()
 	checkResponse := SessionCheckResponse{}
 	checkResponse.AuthSession = &session
-	checkResponse.IsExpired = (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds
+	checkResponse.IsExpired = (curTime - session.LastSeen) > authProvider.SessionExpireTimeSeconds
 	return checkResponse, err
 }
 
