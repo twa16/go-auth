@@ -17,12 +17,12 @@
 package simpleauth
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 	"time"
-	"fmt"
 )
 
 type AuthProvider struct {
@@ -32,12 +32,12 @@ type AuthProvider struct {
 
 type User struct {
 	gorm.Model                  //All DB fields
-	Username     string         `gorm:unique`//The username of the user
-	PasswordHash []byte         `json:-`//BCrypt hash of the user's password
+	Username     string         `gorm:unique` //The username of the user
+	PasswordHash []byte         `json:-`      //BCrypt hash of the user's password
 	FirstName    string         //First name of the user
 	LastName     string         //Last name of the user
-	Email        string         `gorm:unique`//Email of the user
-	PhoneNumber  string         `gorm:unique`//Phone number of the users
+	Email        string         `gorm:unique` //Email of the user
+	PhoneNumber  string         `gorm:unique` //Phone number of the users
 	Role         string         //String that represents a user's role
 	Permissions  []Permission   `gorm:"ForeignKey:AuthUserID"` //The permissions the user has
 	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"` //The metadata of the user
@@ -45,24 +45,24 @@ type User struct {
 }
 
 type Permission struct {
-	gorm.Model        //DB Fields
-	AuthUserID uint   //ID of the user this belongs to
-	Permission string //Permission string
+	gorm.Model `json:-` //DB Fields
+	AuthUserID uint     //ID of the user this belongs to
+	Permission string   //Permission string
 }
 
 type UserMetadata struct {
-	gorm.Model        //DB Fields
-	AuthUserID uint   //ID of the user this belongs to
-	Key        string //Key for the metadata field
-	Value      string //Value for this metadata field
+	gorm.Model `json:-` //DB Fields
+	AuthUserID uint     //ID of the user this belongs to
+	Key        string   //Key for the metadata field
+	Value      string   //Value for this metadata field
 }
 
 type Session struct {
-	gorm.Model                 //DB Fields
-	AuthenticationToken string //Session key used to authorize requests
-	AuthUserID          uint   //ID of user that this token belongs to
-	LastSeen            int64  //Linux time of last API Call
-	Persistent          bool   //If this is set to true, the key never expires.
+	gorm.Model          `json:-` //DB Fields
+	AuthenticationToken string   //Session key used to authorize requests
+	AuthUserID          uint     //ID of user that this token belongs to
+	LastSeen            int64    //Linux time of last API Call
+	Persistent          bool     //If this is set to true, the key never expires.
 }
 
 type SessionCheckResponse struct {

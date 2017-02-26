@@ -236,6 +236,7 @@ func TestLogin(t *testing.T) {
 
 var scuserID uint
 var scsessionToken string
+
 func TestSessionCreation(t *testing.T) {
 	user, _ := authProvider.GetUser("testuser")
 	session, err := authProvider.GenerateSessionKey(user.ID, false)
@@ -285,7 +286,7 @@ func TestSessionAccessUpdate(t *testing.T) {
 	authProvider.UpdateSessionAccessTime(*scresp.AuthSession)
 	scresp, _ = authProvider.CheckSessionKey(scsessionToken)
 	curTime := time.Now().Unix()
-	if curTime - scresp.AuthSession.LastSeen > 5 {
+	if curTime-scresp.AuthSession.LastSeen > 5 {
 		t.Fatal("Session access update failed")
 	}
 }
