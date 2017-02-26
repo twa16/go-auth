@@ -33,7 +33,7 @@ type AuthProvider struct {
 type User struct {
 	gorm.Model                  //All DB fields
 	Username     string         //The username of the user
-	PasswordHash []byte         //BCrypt hash of the user's password
+	PasswordHash []byte         `json:-`//BCrypt hash of the user's password
 	FirstName    string         //First name of the user
 	LastName     string         //Last name of the user
 	Email        string         //Email of the user
@@ -80,10 +80,16 @@ func (authProvider AuthProvider) Startup() {
 
 //CreateUser Persists the user in the database
 func (authProvider AuthProvider) CreateUser(user User) (User, error) {
-	err := authProvider.Database.Save(&user).Error
+	tx := authProvider.Database.Begin()
+	err := tx.Save(&user).Error
 	if err != nil {
 		fmt.Println(err)
+		//If there is an error rollback and return error
+		tx.Rollback()
+		return user, err
 	}
+	//Commit if no error
+	tx.Commit()
 	return user, err
 }
 
@@ -122,8 +128,8 @@ func (authProvider AuthProvider) SetUserPassword(user User, password string) err
 		return err
 	}
 	user.PasswordHash = passwordHash
-	authProvider.Database.Save(user)
-	return nil
+	_, err = authProvider.UpdateUser(user)
+	return err
 }
 
 //CheckLogin This function returns the user true if the credentials correspond to a user
@@ -148,7 +154,15 @@ func (authProvider AuthProvider) GenerateSessionKey(userID uint, persistent bool
 	sessionKey.Persistent = persistent
 	sessionKey.AuthenticationToken = uuid.NewV4().String()
 	sessionKey.LastSeen = time.Now().Unix()
-	err := authProvider.Database.Create(&sessionKey).Error
+	tx := authProvider.Database.Begin()
+	err := tx.Create(&sessionKey).Error
+	if err != nil {
+		//Rollback and return error if error
+		tx.Rollback()
+		return sessionKey, err
+	}
+	//Commit if there is no error
+	tx.Commit()
 	return sessionKey, err
 }
 
@@ -165,12 +179,14 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 }
 
 //UpdateSessionAccessTime Sets the last access time on a session to the current time.
-func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) {
+func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) error {
 	curTime := time.Now().Unix()
 	if (curTime - session.LastSeen) > authProvider.SessionExpireTimeSeconds {
 		session.LastSeen = curTime
-		authProvider.Database.Save(&session)
+		err := authProvider.Database.Save(&session).Error
+		return err
 	}
+	return nil
 }
 
 //CheckPermission Returns true if the user has the provided permission
