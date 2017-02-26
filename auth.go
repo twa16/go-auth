@@ -32,12 +32,12 @@ type AuthProvider struct {
 
 type User struct {
 	gorm.Model                  //All DB fields
-	Username     string         //The username of the user
+	Username     string         `gorm:unique`//The username of the user
 	PasswordHash []byte         `json:-`//BCrypt hash of the user's password
 	FirstName    string         //First name of the user
 	LastName     string         //Last name of the user
-	Email        string         //Email of the user
-	PhoneNumber  string         //Phone number of the users
+	Email        string         `gorm:unique`//Email of the user
+	PhoneNumber  string         `gorm:unique`//Phone number of the users
 	Role         string         //String that represents a user's role
 	Permissions  []Permission   `gorm:"ForeignKey:AuthUserID"` //The permissions the user has
 	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"` //The metadata of the user
