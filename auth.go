@@ -184,8 +184,7 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 //UpdateSessionAccessTime Sets the last access time on a session to the current time.
 func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) error {
 	curTime := time.Now().Unix()
-	if (curTime - session.LastSeen) > authProvider.SessionExpireTimeSeconds {
-		session.LastSeen = curTime
+	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
 		err := authProvider.Database.Save(&session).Error
 		return err
 	}
