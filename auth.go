@@ -185,6 +185,7 @@ func (authProvider AuthProvider) CheckSessionKey(sessionKey string) (SessionChec
 func (authProvider AuthProvider) UpdateSessionAccessTime(session Session) error {
 	curTime := time.Now().Unix()
 	if (curTime - session.LastSeen) < authProvider.SessionExpireTimeSeconds {
+		session.LastSeen = curTime
 		err := authProvider.Database.Save(&session).Error
 		return err
 	}
