@@ -36,8 +36,8 @@ type User struct {
 	PasswordHash []byte         `json:"-"`      //BCrypt hash of the user's password
 	FirstName    string         //First name of the user
 	LastName     string         //Last name of the user
-	Email        string         `gorm:"unique"` //Email of the user
-	PhoneNumber  string         `gorm:"unique"` //Phone number of the users
+	Email        *string         `gorm:"unique"` //Email of the user
+	PhoneNumber  *string         `gorm:"unique"` //Phone number of the users
 	Role         string         //String that represents a user's role
 	Permissions  []Permission   `gorm:"ForeignKey:AuthUserID"` //The permissions the user has
 	UserMetaData []UserMetadata `gorm:"ForeignKey:AuthUserID"` //The metadata of the user
@@ -107,7 +107,7 @@ func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	}
 	authProvider.Database.Model(&user).Association("Permissions").Find(&user.Permissions)
 	authProvider.Database.Model(&user).Association("UserMetaData").Find(&user.UserMetaData)
-	authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
+	//authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
 	return user, err
 }
 
