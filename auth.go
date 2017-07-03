@@ -107,7 +107,7 @@ func (authProvider AuthProvider) GetUser(username string) (User, error) {
 	}
 	authProvider.Database.Model(&user).Association("Permissions").Find(&user.Permissions)
 	authProvider.Database.Model(&user).Association("UserMetaData").Find(&user.UserMetaData)
-	//authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
+	authProvider.Database.Model(&user).Association("Sessions").Find(&user.Sessions)
 	return user, err
 }
 
