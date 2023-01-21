@@ -18,8 +18,8 @@ package simpleauth
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 	"os"
 	"testing"
 	"time"
@@ -30,11 +30,11 @@ var authProvider AuthProvider
 func init() {
 	//os.Remove("./auth-test.db")
 	authProvider = AuthProvider{}
-	db, err := gorm.Open("sqlite3", "./auth-test.db")
-	db.DropTable(&User{})
-	db.DropTable(&Permission{})
-	db.DropTable(&UserMetadata{})
-	db.DropTable(&Session{})
+	db, err := gorm.Open(sqlite.Open("./auth-test.db"), &gorm.Config{})
+	db.Migrator().DropTable(&User{})
+	db.Migrator().DropTable(&Permission{})
+	db.Migrator().DropTable(&UserMetadata{})
+	db.Migrator().DropTable(&Session{})
 	if err != nil {
 		fmt.Println("Error starting DB: " + err.Error())
 		os.Exit(1)
