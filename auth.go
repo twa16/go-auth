@@ -18,7 +18,7 @@ package simpleauth
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
